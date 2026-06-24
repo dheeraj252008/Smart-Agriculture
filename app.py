@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # Corporate Title Branding
 st.set_page_config(page_title="Mahindra Agri Solutions - Dashboard", layout="wide")
 st.title("🚜 Mahindra Agri Solutions Ltd.")
-st.subheader("Capstone Project: Adoption of Remote Sensing for Groundwater & Crop Health")
+st.subheader(" Adoption of Remote Sensing for Groundwater & Crop Health")
 st.markdown("---")
 
 # Split the page layout into two columns for your two main project pillars
