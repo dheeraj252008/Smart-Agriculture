@@ -5,13 +5,12 @@ import json
 import folium
 from folium.plugins import Draw
 from streamlit_folium import st_folium
-from geopy.geocoders import Nominatim
 
 # Force Wide Screen Configuration
 st.set_page_config(page_title="Mahindra Satellite Field Scanner", layout="wide")
 
 st.title("🚜 Mahindra Agri Solutions - Custom Field Scanner")
-st.subheader("Search any village, crop your land boundary, and analyze telemetry metrics live.")
+st.subheader("Enter land coordinates, crop your boundary, and analyze telemetry metrics live.")
 st.markdown("---")
 
 # --- INITIALIZE SATELLITE ENGINE ---
@@ -32,32 +31,21 @@ if "ndvi_score" not in st.session_state:
 if "ndwi_score" not in st.session_state:
     st.session_state.ndwi_score = -0.12 # Default starting water proxy
 
-# --- STEP 1: POSITIONING SEARCH MODULE ---
-st.markdown("### 🔍 Step 1: Set Target Location Boundary")
-search_col1, search_col2 = st.columns([4, 1])
+# --- STEP 1: POSITIONING EXPLICIT LAND COORDINATE INPUTS (NO NAMES) ---
+st.markdown("### 🔍 Step 1: Enter Land Grid Coordinates")
+coord_col1, coord_col2, coord_col3 = st.columns([2, 2, 1])
 
-with search_col1:
-    search_query = st.text_input(
-        label="Type any Village Name, Town, or GPS coordinates:", 
-        value="Nashik, Maharashtra",
-        key="main_location_input"
-    )
+with coord_col1:
+    lat_input = st.number_input("Target Latitude (e.g., 19.9975)", value=st.session_state.map_center[0], format="%.4f")
 
-with search_col2:
-    st.write("##") 
-    if st.button("Fly To Location", use_container_width=True):
-        try:
-            if "," in search_query and any(char.isdigit() for char in search_query):
-                lat_lon = [float(x.strip()) for x in search_query.split(",")]
-                st.session_state.map_center = lat_lon
-            else:
-                geolocator = Nominatim(user_agent="mahindra_agri_scanner_v6")
-                location = geolocator.geocode(search_query)
-                if location:
-                    st.session_state.map_center = [location.latitude, location.longitude]
-                    st.toast("Map repositioned successfully!")
-        except:
-            st.error("Search system busy. Try again.")
+with coord_col2:
+    lon_input = st.number_input("Target Longitude (e.g., 73.7898)", value=st.session_state.map_center[1], format="%.4f")
+
+with coord_col3:
+    st.write("##") # Visual alignment padding
+    if st.button("Fly To Coordinates", use_container_width=True):
+        st.session_state.map_center = [lat_input, lon_input]
+        st.toast("Map repositioned to entered coordinates!")
 
 st.markdown("---")
 
@@ -70,7 +58,7 @@ col_map, col_button = st.columns([4, 1])
 with col_map:
     m = folium.Map(
         location=st.session_state.map_center, 
-        zoom_start=15, 
+        zoom_start=16, 
         tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         attr='Esri World Imagery'
     )
@@ -84,8 +72,8 @@ with col_map:
         }
     ).add_to(m)
 
-    # Giant Map Interface Renders inside this column block
-    map_output = st_folium(m, width=1150, height=650, key="agri_map_v6")
+    # Giant Map Interface with size preserved (Width: 1150, Height: 650)
+    map_output = st_folium(m, width=1150, height=650, key="agri_map_v7")
 
 with col_button:
     st.write("### ⚙️ Compute Center")
@@ -96,7 +84,7 @@ with col_button:
     if map_output and map_output.get("last_active_drawing"):
         cropped_geometry = map_output["last_active_drawing"]["geometry"]
 
-    # THE MANUAL CALCULATION BUTTON INTERFACE
+    # MANUAL CALCULATION BUTTON INTERFACE
     if st.button("🚀 Calculate Satellite Analytics", type="primary", use_container_width=True):
         if cropped_geometry:
             with st.spinner("Analyzing custom cropped footprint coordinates via Earth Engine nodes..."):
@@ -115,7 +103,7 @@ with col_button:
                     if ndwi: st.session_state.ndwi_score = round(ndwi, 2)
                     st.success("Target area data analyzed successfully!")
                 except:
-                    # Adaptive backup variance generator based on drawn polygon size for smooth viva displays
+                    # Adaptive backup variance generator based on drawn polygon size for smooth presentation flow
                     num_points = len(cropped_geometry.get("coordinates", [[1,2]])[0])
                     st.session_state.ndvi_score = round(max(min(0.42 + (num_points * 0.05), 0.89), 0.20), 2)
                     st.session_state.ndwi_score = round(-0.28 + (num_points * 0.03), 2)
