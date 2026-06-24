@@ -4,3 +4,4 @@ matplotlib
 earthengine-api
 folium
 streamlit-folium
+geopy
