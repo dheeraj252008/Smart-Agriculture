@@ -58,12 +58,18 @@ def fetch_satellite_data(lat, lon):
 # Calculate metrics for the location set by the user
 live_ndvi, live_ndwi = fetch_satellite_data(lat_input, lon_input)
 
-# --- STEP 4: INTERACTIVE MAP RENDER (TOP HALF) ---
-st.header("📍 Live Regional Map View")
-st.write("This map shows the exact location grid you have set. The satellite is scanning this specific pin boundary:")
+# --- STEP 4: INTERACTIVE MAP RENDER (TOP HALF) WITH SATELLITE VIEW ---
+st.header("📍 Live Regional Satellite Map View")
+st.write("This map shows the actual satellite imagery layer for the location grid you have set:")
 
-# Initialize interactive map centered at the user's custom location
-m = folium.Map(location=[lat_input, lon_input], zoom_start=12, tiles="OpenStreetMap")
+# Initialize interactive map centered at the user's custom location with Esri Satellite Imagery
+m = folium.Map(
+    location=[lat_input, lon_input], 
+    zoom_start=15, 
+    tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr='Esri World Imagery'
+)
+
 # Add a marker pin on the map representing the target farm
 folium.Marker(
     [lat_input, lon_input], 
@@ -73,7 +79,7 @@ folium.Marker(
 ).add_to(m)
 
 # Display the map interactively on the webpage
-folium_static(m, width=1100, height=350)
+folium_static(m, width=1100, height=450)
 st.markdown("---")
 
 # --- STEP 5: CORE MONITORING TWIN PILLARS (BOTTOM HALF) ---
