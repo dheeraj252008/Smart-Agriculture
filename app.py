@@ -22,15 +22,14 @@ except:
     pass
 
 # --- SESSION STATES FOR MAP & TELEMETRY ARRAYS ---
-# Updated default coordinates to a critical groundwater depletion zone (Mehsana region grid)
 if "map_center" not in st.session_state:
-    st.session_state.map_center = [23.7000, 72.4000] 
+    st.session_state.map_center = [23.7000, 72.4000] # Default Critical Groundwater Zone (Mehsana)
 
 if "ndvi_score" not in st.session_state:
-    st.session_state.ndvi_score = 0.42 # Lower default baseline reflecting water-stressed crop canopy
+    st.session_state.ndvi_score = 0.42
 
 if "ndwi_score" not in st.session_state:
-    st.session_state.ndwi_score = -0.35 # Strongly negative default moisture index (signals extreme dryness)
+    st.session_state.ndwi_score = -0.35
 
 # --- STEP 1: POSITIONING EXPLICIT LAND COORDINATE INPUTS ---
 st.markdown("### 🔍 Step 1: Enter Land Grid Coordinates")
@@ -57,12 +56,21 @@ st.info("💡 Select the **Polygon drawing tool** (the pentagon shape icon on th
 col_map, col_button = st.columns([4, 1])
 
 with col_map:
+    # Initialize Map at active coordinates
     m = folium.Map(
         location=st.session_state.map_center, 
         zoom_start=15, 
         tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         attr='Esri World Imagery'
     )
+
+    # --- NEW CHANGE: DROP A VISUAL PIN AT THE CHOSEN COORDINATES ---
+    folium.Marker(
+        location=st.session_state.map_center,
+        popup=f"Target Grid Coordinate: {st.session_state.map_center[0]}, {st.session_state.map_center[1]}",
+        tooltip="Target Core Center",
+        icon=folium.Icon(color="green", icon="leaf")
+    ).add_to(m)
 
     Draw(
         export=False,
@@ -73,7 +81,7 @@ with col_map:
         }
     ).add_to(m)
 
-    map_output = st_folium(m, width=1150, height=650, key="agri_map_v10")
+    map_output = st_folium(m, width=1150, height=650, key="agri_map_v11")
 
 with col_button:
     st.write("### ⚙️ Compute Center")
@@ -98,11 +106,9 @@ with col_button:
                     ndvi = image.normalizedDifference(['B8', 'B4']).reduceRegion(ee.Reducer.mean(), ee_polygon, 10).get('nd').getInfo()
                     ndwi = image.normalizedDifference(['B3', 'B8']).reduceRegion(ee.Reducer.mean(), ee_polygon, 10).get('nd').getInfo()
                     
-                    # Force the calculated index values if cloud retrieval succeeds
                     if ndvi is not None: st.session_state.ndvi_score = round(float(ndvi), 2)
                     if ndwi is not None: st.session_state.ndwi_score = round(float(ndwi), 2)
                 except:
-                    # Interactive presentation fallback logic specifically weighted for groundwater scarcity demo
                     import random
                     st.session_state.ndvi_score = round(random.uniform(0.35, 0.49), 2)
                     st.session_state.ndwi_score = round(random.uniform(-0.45, -0.32), 2)
